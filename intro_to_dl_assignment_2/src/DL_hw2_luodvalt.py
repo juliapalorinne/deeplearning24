@@ -11,7 +11,7 @@ import os
 os.chdir('C:/Users/julia/OneDrive/Tiedostot/Opiskelu/DeepLearning/intro_to_dl_assignment_2/')
 
 #--- hyperparameters ---
-N_EPOCHS = 3
+N_EPOCHS = 2
 BATCH_SIZE_TRAIN = 100
 BATCH_SIZE_TEST = 100
 LR = 0.01
@@ -47,21 +47,20 @@ test_loader = torch.utils.data.DataLoader(dataset=test_set, batch_size=BATCH_SIZ
 class CNN(nn.Module):
     def __init__(self, num_classes=NUM_CLASSES):
         super(CNN, self).__init__()
-        self.conv1 = nn.Conv2d(3, 6, 5)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=5, padding=2) # 28*28 -> 14*14
         self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, num_classes)
+        # self.conv2 = nn.Conv2d(64, 16, kernel_size=5, padding=2) # 14*14 -> 7*7
+        self.fc1 = nn.Linear(64*14*14, 196)
+        self.fc2 = nn.Linear(196, num_classes)
 
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
+        # x = self.pool(F.relu(self.conv2(x)))
         x = torch.flatten(x, 1) # flatten all dimensions except batch
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
-        x = self.fc3(x)
+        x = F.log_softmax(x, dim=1)
         return x
 
 
@@ -76,8 +75,8 @@ else:
 model = CNN().to(device)
 
 # WRITE CODE HERE
-optimizer = nn.CrossEntropyLoss()
-loss_function = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+loss_function  = nn.CrossEntropyLoss()
+optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
 
 #--- training ---
@@ -89,11 +88,22 @@ for epoch in range(N_EPOCHS):
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
         outputs = model.forward(data)
+        
         loss = loss_function(outputs, target)
         loss.backward()
         optimizer.step()
 
+        predicted = torch.zeros(target.size(dim=0))
+        for row_num, data in enumerate(outputs):
+            predicted[row_num] = torch.argmax(torch.exp(data)).item()
+
+        print(predicted)
+        print(target)
         train_loss += loss.item()
+        train_correct += (target == predicted).sum()
+        total += BATCH_SIZE_TRAIN
+
+
         print('Training: Epoch %d - Batch %d/%d: Loss: %.4f | Train Acc: %.3f%% (%d/%d)' % 
               (epoch, batch_num, len(train_loader), train_loss / (batch_num + 1), 
                100. * train_correct / total, train_correct, total))
