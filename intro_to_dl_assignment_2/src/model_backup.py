@@ -7,7 +7,6 @@ from torchvision import transforms, datasets
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-import random
 import os
 os.chdir('C:/Users/julia/OneDrive/Tiedostot/Opiskelu/DeepLearning/intro_to_dl_assignment_2/')
 
@@ -15,7 +14,7 @@ os.chdir('C:/Users/julia/OneDrive/Tiedostot/Opiskelu/DeepLearning/intro_to_dl_as
 N_EPOCHS = 8
 BATCH_SIZE_TRAIN = 100
 BATCH_SIZE_TEST = 100
-LR = 0.02
+LR = 0.01
 #--- fixed constants ---
 NUM_CLASSES = 24
 DATA_DIR = './data/sign_mnist_%s'
@@ -41,8 +40,8 @@ test_set  = datasets.ImageFolder(DATA_DIR % 'test',  transform=test_transform)
 
 # Create Pytorch data loaders
 train_loader = torch.utils.data.DataLoader(dataset=train_set, batch_size=BATCH_SIZE_TRAIN, shuffle=True)
-dev_loader = torch.utils.data.DataLoader(dataset=dev_set, batch_size=BATCH_SIZE_TEST, shuffle=False)
 test_loader = torch.utils.data.DataLoader(dataset=test_set, batch_size=BATCH_SIZE_TEST, shuffle=False)
+
 
 #--- model ---
 class CNN(nn.Module):
@@ -77,13 +76,7 @@ else:
 model = CNN().to(device)
 
 loss_function  = nn.CrossEntropyLoss()
-optimizer = optim.SGD(model.parameters(), lr=LR, momentum=0.9)
-# optimizer = optim.SGD(model.parameters(), lr=0.05)                                # test accuracy 89.3%, 10 epochs, no regularization
-# optimizer = optim.SGD(model.parameters(), lr=0.01)                                # test accuracy 59%, 8 epochs, no regularization
-# optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)                  # test accuracy 65%, 8 epochs, no regularization
-# optimizer = optim.SGD(model.parameters(), lr=0.02, momentum=0.9)                  # test accuracy 86.2%, 8 epochs, no regularization
-# optimizer = torch.optim.Adam(model.parameters(), lr=0.01, betas=(0.9, 0.999))     # test accuracy 11.4%, 8 epochs, no regularization
-optimizer_adagrad = torch.optim.Adagrad(model.parameters(), lr=LR)
+optimizer = optim.SGD(model.parameters(), lr=LR)
 
 
 #--- training ---
@@ -91,8 +84,6 @@ for epoch in range(N_EPOCHS):
     train_loss = 0
     train_correct = 0
     total = 0
-    random.shuffle(train_loader)
-
     for batch_num, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
@@ -106,6 +97,8 @@ for epoch in range(N_EPOCHS):
         for row_num, data in enumerate(outputs):
             predicted[row_num] = torch.argmax(torch.exp(data)).item()
 
+        print(predicted)
+        print(target)
         train_loss += loss.item()
         train_correct += (target == predicted).sum()
         total += BATCH_SIZE_TRAIN
@@ -114,29 +107,7 @@ for epoch in range(N_EPOCHS):
         print('Training: Epoch %d - Batch %d/%d: Loss: %.4f | Train Acc: %.3f%% (%d/%d)' % 
               (epoch, batch_num, len(train_loader), train_loss / (batch_num + 1), 
                100. * train_correct / total, train_correct, total))
-    
-    dev_loss = 0
-    dev_correct = 0
-    dev_total = 0
-    with torch.no_grad():
-        for batch_num, (data, target) in enumerate(dev_loader):
-            data, target = data.to(device), target.to(device)
-
-            outputs = model.forward(data)
-            loss = loss_function(outputs, target)
-
-            predicted = torch.zeros(target.size(dim=0))
-            for row_num, data in enumerate(outputs):
-                predicted[row_num] = torch.argmax(torch.exp(data)).item()
-
-            dev_loss += loss.item()
-            dev_correct += (target == predicted).sum()
-            dev_total += BATCH_SIZE_TEST
-
-            print('Evaluating: Batch %d/%d: Loss: %.4f | Dev Acc: %.3f%% (%d/%d)' % 
-                (batch_num, len(test_loader), dev_loss / (batch_num + 1), 
-                100. * dev_correct / total, dev_correct, dev_total))
-
+        
 
 
 #--- test ---
@@ -145,7 +116,6 @@ test_correct = 0
 total = 0
 
 with torch.no_grad():
-    random.shuffle(test_loader)
     for batch_num, (data, target) in enumerate(test_loader):
         data, target = data.to(device), target.to(device)
 
@@ -156,6 +126,8 @@ with torch.no_grad():
         for row_num, data in enumerate(outputs):
             predicted[row_num] = torch.argmax(torch.exp(data)).item()
 
+        print(predicted)
+        print(target)
         test_loss += loss.item()
         test_correct += (target == predicted).sum()
         total += BATCH_SIZE_TEST
