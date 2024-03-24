@@ -27,6 +27,8 @@ import data
 # Constants - Add here as you wish
 N_EPOCHS = 5
 EMBEDDING_DIM = 200
+HIDDEN_DIM = 100
+LAYER_DIM = 1
 
 TRAIN_FILE = './data/sent140.train.mini.csv'
 DEV_FILE   = './data/sent140.dev.csv'
@@ -75,11 +77,17 @@ def epoch_time(start_time, end_time):
 class RNN(nn.Module):
     def __init__(self):
         super().__init__()
-        #WRITE CODE HERE
+        self.features = nn.Sequential(
+        nn.Embedding.from_pretrained(glove_embeddings),
+	        nn.RNN(EMBEDDING_DIM, HIDDEN_DIM, LAYER_DIM, 
+                batch_first=True, nonlinearity='relu')
+        )
+        self.classifier = nn.Linear(HIDDEN_DIM, 2)
 
     def forward(self, inputs, lengths=None):
-        #WRITE CODE HERE
-        return 0 
+        x = self.features(inputs)
+        x = F.log_softmax(self.classifier(x), dim=1)
+        return x
 
 
 
@@ -98,10 +106,12 @@ if __name__ == '__main__':
                 TEST_BS,
                 EMBEDDING_DIM) 
 
-        model = None
+        model = RNN().to(device)
 
-        optimizer = None
+        optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
+        loss_function = nn.NLLLoss().to(device)
         criterion = None
+
 
         # --- Train Loop ---
         print('Training')
