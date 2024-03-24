@@ -121,9 +121,17 @@ if __name__ == '__main__':
             epoch_loss = 0
             epoch_acc = 0
             
-            for batch in train_loader:
-       		#WRITE CODE HERE
-                pass
+            for (inputs, labels, length) in train_loader:
+                optimizer.zero_grad()
+                outputs = model(data)
+                loss = loss_function(outputs, labels)
+                loss.backward()
+                optimizer.step()
+                
+                epoch_loss += loss.item()
+                epoch_acc += (labels == outputs).sum()
+
+            
  
             train_loss, train_acc = (epoch_loss / len(train_loader), epoch_acc / len(train_loader)) 
             valid_loss, valid_acc = evaluate(model, dev_loader, criterion)
