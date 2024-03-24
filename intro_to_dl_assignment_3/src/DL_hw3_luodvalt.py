@@ -20,6 +20,7 @@ import regex as re
 import time
 from tqdm import tqdm
 from torchtext import vocab
+os.chdir('C:/Users/julia/OneDrive/Tiedostot/Opiskelu/DeepLearning/intro_to_dl_assignment_3/')
 
 import data
 
@@ -27,9 +28,9 @@ import data
 N_EPOCHS = 5
 EMBEDDING_DIM = 200
 
-TRAIN_FILE = '../data/sent140.train.mini.csv'
-DEV_FILE   = '../data/sent140.dev.csv'
-TEST_FILE  = '../data/sent140.test.csv'
+TRAIN_FILE = './data/sent140.train.mini.csv'
+DEV_FILE   = './data/sent140.dev.csv'
+TEST_FILE  = './data/sent140.test.csv'
 
 TRAIN_BS = 32
 DEV_BS   = 32
@@ -86,7 +87,7 @@ if __name__ == '__main__':
         
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-        print('Prepariong dataset')
+        print('Preparing dataset')
         train_loader, dev_loader, test_loader, glove_embeddings = data.get_dataset(
                 tokenizer,
                 TRAIN_FILE,
