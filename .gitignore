@@ -1,2 +1,3 @@
 __pycache__/
 .DS_Store
+intro_to_dl_assignment_3/data/sent140.train.csv
